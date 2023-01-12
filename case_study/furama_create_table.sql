@@ -9,6 +9,7 @@ CREATE TABLE vi_tri (
 CREATE TABLE trinh_do (
     ma_trinh_do INT PRIMARY KEY,
     ten_trinh_do VARCHAR(45)
+    
 );
 -- tạo bảng bộ phận --
 CREATE TABLE bo_phan (
@@ -23,15 +24,16 @@ CREATE TABLE nhan_vien (
     so_cmnd VARCHAR(45),
     luong DOUBLE,
     so_dien_thoai VARCHAR(45),
+    email varchar(45),
     dia_chi VARCHAR(45),
     ma_vi_tri INT,
     ma_trinh_do INT,
     ma_bo_phan INT,
-    CONSTRAINT fk_vi_tri FOREIGN KEY (ma_vi_tri)
+    FOREIGN KEY (ma_vi_tri)
         REFERENCES vi_tri (ma_vi_tri),
-    CONSTRAINT fk_bo_phan FOREIGN KEY (ma_bo_phan)
+    FOREIGN KEY (ma_bo_phan)
         REFERENCES bo_phan (ma_bo_phan),
-    CONSTRAINT fk_trinh_do FOREIGN KEY (ma_trinh_do)
+    FOREIGN KEY (ma_trinh_do)
         REFERENCES trinh_do (ma_trinh_do)
 );
 

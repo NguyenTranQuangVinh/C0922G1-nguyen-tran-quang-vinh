@@ -26,5 +26,5 @@ CREATE TABLE order_detail (
         REFERENCES `order` (order_id),
     FOREIGN KEY (product_id)
         REFERENCES product (product_id),
-    order_detail_qty INT
+    order_qty INT
 );

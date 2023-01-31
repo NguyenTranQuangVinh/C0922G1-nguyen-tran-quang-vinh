@@ -1,7 +1,8 @@
 use furama_create_table;
 -- 2.Hiển thị thông tin của tất cả nhân viên có trong hệ thống có tên bắt đầu là 
 -- một trong các ký tự “H”, “T” hoặc “K” và có tối đa 15 kí tự.
-select * from nhan_vien where substring_index(ho_ten," ",-1) like 'H%' 
+select * from nhan_vien 
+where substring_index(ho_ten," ",-1) like 'H%' 
 or substring_index(ho_ten," ",-1) like 'T%'
 or substring_index(ho_ten," ",-1) like 'K%'
 and char_length(ho_ten) <= 15;
@@ -24,6 +25,20 @@ so_lan_dat_phong;
 -- ten_dich_vu, ngay_lam_hop_dong, ngay_ket_thuc, tong_tien(Với tổng tiền được tính theo công thức như sau: 
 -- Chi Phí Thuê + Số Lượng * Giá, với Số Lượng và Giá là từ bảng dich_vu_di_kem, hop_dong_chi_tiet) 
 -- cho tất cả các khách hàng đã từng đặt phòng. (những khách hàng nào chưa từng đặt phòng cũng phải hiển thị ra).
+SET sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));
+select khach_hang.ma_khach_hang,
+ khach_hang.ho_ten,
+ loai_khach.ten_loai_khach, 
+ hop_dong.ma_hop_dong,
+ dich_vu.ten_dich_vu, 
+ hop_dong.ngay_lam_hop_dong, 
+ hop_dong.ngay_ket_thuc,
+ (ifnull(dich_vu.chi_phi_thue,0)+(ifnull(dvdk.gia*hdct.so_luong,0))) as tong_tien 
+ from khach_hang
+ left join hop_dong on hop_dong.ma_khach_hang =  khach_hang.ma_khach_hang
+ left join loai_khach on loai_khach.ma_loai_khach = khach_hang.ma_loai_khach
+ left join hop_dong_chi_tiet as hdct on hdct.ma_hop_dong = hop_dong.ma_hop_dong 
+ left join dich_vu on dich_vu.ma_dich_vu = hop_dong.ma_dich_vu 
+ left join dich_vu_di_kem as dvdk on dvdk.ma_dich_vu_di_kem = hdct.ma_dich_vu_di_kem 
+group by ma_hop_dong, khach_hang.ma_khach_hang;   
 
-
- 

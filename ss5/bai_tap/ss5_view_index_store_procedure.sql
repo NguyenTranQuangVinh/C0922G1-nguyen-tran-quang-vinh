@@ -1,33 +1,43 @@
 create database product_management;
 use product_management;
-create table products (
-  id int primary key auto_increment, 
+create table products(
+  id int auto_increment primary key, 
   product_code int, 
   product_name varchar(50), 
   product_price double, 
   product_amount int, 
   product_description varchar(50), 
-  product_status bit
+  product_status varchar(50)
 );
-insert into products (
+
+insert into products(id,
   product_code, product_name, product_price, 
   product_amount, product_description, 
   product_status
 ) 
 values 
-  (1, 'Áo', 100, '10', 'Bền', 1), 
-  (
-    2, 'Quần', 200, '20', 'Vải đẹp', 
-    1
-  ), 
-  (3, 'Giày', 1000, '1', 'Xinh', 0);
+  (1,1, 'May Giat', 3, 1, 'abc', 'abc'), 
+  (2,2, 'Tu Lanh', 5, 23, 'bcd', 'bcd'), 
+  (3,3, 'Dieu Hoa', 7, 1, 'cde', 'cde'), 
+  (4,4, 'Quat', 1, 4, 'def', 'def'), 
+  (5,5, 'Bep Dien', 2, 3, 'efg', 'efg');
+  
 -- Tạo Unique Index trên bảng Products (sử dụng cột productCode để tạo chỉ mục)
-create unique index i_product_code on products(product_code);
+explain 
+select * from products 
+where 
+  product_code = 3;
+create unique index i_code on products (product_code);
+
 -- Tạo Composite Index trên bảng Products (sử dụng 2 cột productName và productPrice)
-create unique index i_product on products(product_name, product_price);
--- Tạo view lấy về các thông tin: productCode, productName, productPrice, 
--- productStatus từ bảng products.
-create view show_product as 
+explain select * from products 
+where 
+  product_code = 3 
+  and product_price = 7;
+create index i_code_price on products(product_code, product_price);
+
+-- Tạo view lấy về các thông tin: productCode, productName, productPrice, productStatus từ bảng products.
+create view w_product as 
 select 
   product_code, 
   product_name, 
@@ -35,77 +45,63 @@ select
   product_status 
 from 
   products;
-select 
-  * 
-from 
-  show_product;
+select * from w_product;
+  
 -- Tiến hành sửa đổi view
 update 
-  show_product 
+  w_product 
 set 
-  product_price = 200 
+  product_name = 'abcd' 
 where 
-  product_name = "áo";
+  product_code = 2;
+  
 -- Tiến hành xoá view
 drop 
-  view show_product;
+  view w_product;
+  
 -- Tạo store procedure lấy tất cả thông tin của tất cả các sản phẩm trong bảng product
-delimiter // create procedure p_name () begin 
-select 
-  * 
-from 
-  products;
+delimiter // create procedure sp_get_products() begin 
+select * from products;
 end // delimiter;
-call p_name();
+call sp_get_products;
+
 -- Tạo store procedure thêm một sản phẩm mới
-delimiter // create procedure insert_product(
-  in code int, 
-  in name varchar(45), 
-  in price double, 
-  in amount int, 
-  in description varchar(45), 
-  in status bit
+delimiter // create procedure sp_add_product(
+  in product_code int, 
+  in product_name varchar(50), 
+  in product_price double, 
+  in product_amount int, 
+  in product_description varchar(50), 
+  in product_status varchar(50)
 ) begin insert into products(
   product_code, product_name, product_price, 
   product_amount, product_description, 
   product_status
-) 
-values 
-  (
-    code, name, price, amount, description, 
-    status
-  );
+) value (
+  product_code, product_name, product_price, 
+  product_amount, product_description, 
+  product_status
+);
 end // delimiter;
-call insert_product(4, 'Gương', 20, 2, 'Bền', 1);
+call sp_add_product(7, 'mnb', 4, 3, 'mnb', 'mnb');
+
 -- Tạo store procedure sửa thông tin sản phẩm theo id
-delimiter // create procedure update_product (
-  in id int, 
-  in code int, 
-  in name varchar(45), 
-  in price double, 
-  in amount int, 
-  in description varchar(45), 
-  in status bit
-) begin 
-update 
-  products as p 
-set 
-  p.product_code = code, 
-  p.product_name = name, 
-  p.product_price = price, 
-  p.product_amount = amount, 
-  p.product_description = description, 
-  p.product_status = status 
-where 
-  id = p.id;
-end // delimiter;
-call update_product(1, 5, '3', 4, 5, '6', 1);
-call p_name();
+delimiter // 
+create procedure sp_set_product(in p_id int) 
+begin 
+update products 
+set product_name = 'mnpq' 
+where id = p_id;
+end // 
+delimiter ;
+call sp_set_product(1);
+
 -- Tạo store procedure xoá sản phẩm theo id
-delimiter // create procedure remove_product_by_id(in id int) begin 
-delete from 
-  products as p 
-where 
-  p.id = id;
-end // delimiter;
-call remove_product_by_id(1);
+delimiter //
+create procedure sp_delete_product(in p_id int)
+begin 
+	delete from products 
+	where id = p_id;
+end //
+delimiter ;
+call sp_delete_product(1);

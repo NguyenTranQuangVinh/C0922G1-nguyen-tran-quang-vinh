@@ -33,14 +33,15 @@ select khach_hang.ma_khach_hang,
  dich_vu.ten_dich_vu, 
  hop_dong.ngay_lam_hop_dong, 
  hop_dong.ngay_ket_thuc,
- (ifnull(dich_vu.chi_phi_thue,0)+(ifnull(dvdk.gia*hdct.so_luong,0))) as tong_tien 
- from khach_hang
- left join hop_dong on hop_dong.ma_khach_hang =  khach_hang.ma_khach_hang
- left join loai_khach on loai_khach.ma_loai_khach = khach_hang.ma_loai_khach
- left join hop_dproductsproductsong_chi_tiet as hdct on hdct.ma_hop_dong = hop_dong.ma_hop_dong 
- left join dich_vu on dich_vu.ma_dich_vu = hop_dong.ma_dich_vu 
- left join dich_vu_di_kem as dvdk on dvdk.ma_dich_vu_di_kem = hdct.ma_dich_vu_di_kem 
-group by ma_hop_dong, khach_hang.ma_khach_hang;   
+ (ifnull(dich_vu.chi_phi_thue,0)+ sum(ifnull(hdct.so_luong,0) * ifnull(dvdk.gia,0))) as tong_tien 
+ from loai_khach
+join khach_hang on loai_khach.ma_loai_khach = khach_hang.ma_loai_khach
+join hop_dong on khach_hang.ma_khach_hang =  hop_dong.ma_khach_hang
+join dich_vu on  hop_dong.ma_dich_vu = dich_vu.ma_dich_vu 
+join hop_dong_chi_tiet as hdct on hop_dong.ma_hop_dong = hop_dong.ma_hop_dong 
+join dich_vu_di_kem as dvdk on hdct.ma_dich_vu_di_kem = dvdk.ma_dich_vu_di_kem 
+group by ma_hop_dong
+order by khach_hang.ma_khach_hang;
 -- 6.	Hiển thị ma_dich_vu, ten_dich_vu, dien_tich, chi_phi_thue, ten_loai_dich_vu của tất cả các loại dịch vụ chưa từng được 
 -- khách hàng thực hiện đặt từ quý 1 của năm 2021 (Quý 1 là tháng 1, 2, 3).
  select dv.ma_dich_vu,
@@ -139,3 +140,67 @@ and year(hd.ngay_lam_hop_dong) like 2020
 group by hd.ma_hop_dong;
 -- 13.	Hiển thị thông tin các Dịch vụ đi kèm được sử dụng nhiều nhất bởi các Khách hàng đã đặt phòng.
 --  (Lưu ý là có thể có nhiều dịch vụ có số lần sử dụng nhiều như nhau).
+select 
+dvdk.ma_dich_vu_di_kem,
+dvdk.ten_dich_vu_di_kem,
+sum(hdct.so_luong) as so_luong
+from dich_vu_di_kem as dvdk
+join hop_dong_chi_tiet as hdct on dvdk.ma_dich_vu_di_kem = hdct.ma_dich_vu_di_kem
+group by dvdk.ma_dich_vu_di_kem
+having so_luong = (select max(so_luong) from hop_dong_chi_tiet);
+-- 14.	Hiển thị thông tin tất cả các Dịch vụ đi kèm chỉ mới được sử dụng một lần duy nhất.
+--  Thông tin hiển thị bao gồm ma_hop_dong, ten_loai_dich_vu, ten_dich_vu_di_kem, so_lan_su_dung 
+--  (được tính dựa trên việc count các ma_dich_vu_di_kem).
+select 
+hd.ma_hop_dong,
+ldv.ten_loai_dich_vu,
+dvdk.ten_dich_vu_di_kem,
+count(hdct.ma_dich_vu_di_kem) as so_lan_su_dung 
+from hop_dong as hd
+left join dich_vu as dv on dv.ma_dich_vu = hd.ma_dich_vu 
+left join hop_dong_chi_tiet as hdct on hdct.ma_hop_dong = hd.ma_hop_dong
+left join loai_dich_vu as ldv on ldv.ma_loai_dich_vu = dv.ma_loai_dich_vu
+left join dich_vu_di_kem as dvdk on dvdk.ma_dich_vu_di_kem = hdct.ma_dich_vu_di_kem
+group by hdct.ma_dich_vu_di_kem
+having so_lan_su_dung = 1;
+-- 15.	Hiển thi thông tin của tất cả nhân viên bao gồm ma_nhan_vien, ho_ten, ten_trinh_do, ten_bo_phan, so_dien_thoai, 
+-- dia_chi mới chỉ lập được tối đa 3 hợp đồng từ năm 2020 đến 2021.
+select 
+nv.ma_nhan_vien,
+nv.ho_ten,
+td.ten_trinh_do,
+bp.ten_bo_phan,
+nv.so_dien_thoai,
+nv.dia_chi,
+hd.ngay_lam_hop_dong,
+count(hd.ma_nhan_vien) as so_luong
+from nhan_vien as nv
+left join hop_dong as hd on hd.ma_nhan_vien = nv.ma_nhan_vien
+left join trinh_do as td on td.ma_trinh_do = nv.ma_trinh_do
+left join bo_phan as bp on bp.ma_bo_phan = nv.ma_bo_phan
+where year(hd.ngay_lam_hop_dong) between 2020 and 2021
+group by nv.ma_nhan_vien
+having 
+count(hd.ma_nhan_vien) <= 3;
+-- 16.	Xóa những Nhân viên chưa từng lập được hợp đồng nào từ năm 2019 đến năm 2021.
+select nv.ma_nhan_vien, 
+nv.ho_ten
+from nhan_vien as nv 
+join hop_dong as hd on hd.ma_nhan_vien = nv.ma_nhan_vien 
+where year(hd.ngay_lam_hop_dong) between 2019 and 2021 
+group by nv.ma_nhan_vien;
+
+select nv.ma_nhan_vien,
+nv.ho_ten
+from nhan_vien as nv 
+where nv.ma_nhan_vien not in (select nv.ma_nhan_vien
+from nhan_vien as nv 
+join hop_dong as hd on hd.ma_nhan_vien = nv.ma_nhan_vien 
+where year(hd.ngay_lam_hop_dong) between 2019 and 2021 
+group by nv.ma_nhan_vien);
+
+
+
+
+
+
